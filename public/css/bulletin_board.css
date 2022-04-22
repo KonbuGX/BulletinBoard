@@ -1,0 +1,64 @@
+*{margin:0;padding:0;}
+
+/*スレッドリストのデザイン*/
+.threadList,.commentList{width: 80%;margin: 10% 30%;padding: auto;}
+
+/*スレッドコンテンツのデザイン*/
+.threadContentns,.commentContentns{
+    width: 60%;
+    border: 1px solid black;
+    margin-top: 5px;
+}
+
+/*スレッドの追加エリアのデザイン*/
+.addThreadArea,.addCommentArea{width: 80%;margin: 5% 30%;padding: auto;}
+
+/*スレッドの追加エリアのデザイン*/
+.msgArea{font-size: 18px;color: red;text-align: center;}
+
+/*タイトル、スレッド名のデザイン*/
+.title,.threadName{
+    width: 80%; 
+    margin: 3% auto;
+    padding: auto;
+    text-align: center;
+    font-size: 24px;
+}
+
+/*コメント画面のバックボタンのデザイン*/
+.back-btn {
+    position: fixed;
+    top: 5px;
+    right: 20px;
+    left: 10px;
+    width: 40px;
+    height: 24px;
+    z-index: 2;
+    box-sizing: border-box;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.back-btn span {
+    position: absolute;
+    width: 40px;
+    height: 6px;
+    background: rgb(0, 0, 0);
+    border-radius: 10px;
+}
+
+.back-btn span:nth-child(1) {
+    top: 0;
+    transform: translate(-7px,12px) rotate(135deg);
+}
+
+.back-btn span:nth-child(2) {
+    top: 15px;
+    width: 60px;
+    transform: translate(-3px,10px);
+}
+
+.back-btn span:nth-child(3) {
+    top: 30px;
+    transform: translate(-7px,8px) rotate(45deg);
+}

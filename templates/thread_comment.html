@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="/public/css/bulletin_board.css">
+    <title>掲示板アプリ</title>
+</head>
+<body>
+    <div class="title">掲示板</div>
+    <p class="back-btn" onclick="location.href='/'">
+		<span></span>
+		<span></span>
+		<span></span>
+	</p>
+    <div class="threadName">{{ tname }}</div>
+    <div class="msgArea">
+        {% for msg in error_msg %}
+            <p>{{ msg }}</p>
+        {% endfor %}
+    </div>
+    <div class="commentList">
+        {% for temps in comment_list %}
+            <div class="commentContentns">
+                <div>ネーム: {{ temps.comment_name }}</div>
+                <div>comment: {{ temps.comment }}</div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="addCommentArea">
+        <form action="/addComment" method="post">
+            <p>ネーム：<input name="cname"></p>
+            <p>コメント：<input name="cmt"></p>
+            <input type="hidden" name="tid" value="{{ tid }}">
+            <input type="hidden" name="tname" value="{{ tname }}">
+            <button>add</button>
+        </form>
+    </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="/public/js/bulletin_board.js"></script>
+</body>
+</html>
