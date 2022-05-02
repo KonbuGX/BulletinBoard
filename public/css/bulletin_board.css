@@ -74,16 +74,16 @@
 
 .back-btn span:nth-child(1) {
     top: 0;
-    transform: translate(-7px,12px) rotate(135deg);
+    transform: translate(7px,83px) rotate(135deg);
 }
 
 .back-btn span:nth-child(2) {
     top: 15px;
     width: 60px;
-    transform: translate(-3px,10px);
+    transform: translate(18px,80px);
 }
 
 .back-btn span:nth-child(3) {
     top: 30px;
-    transform: translate(-7px,8px) rotate(45deg);
+    transform: translate(7px,77px) rotate(45deg);
 }
