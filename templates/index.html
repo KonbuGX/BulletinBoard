@@ -7,7 +7,15 @@
     <title>掲示板アプリ</title>
 </head>
 <body>
-    <div class="title">掲示板</div>
+    <div class="header">
+        <div class="title">掲示板</div>
+        <div class="searchArea">
+            <form action="/searchThread" method="post">
+               <input name="tname">
+               <button>検索</button>
+            </form>
+        </div>
+    </div>
     <div class="msgArea">
         {% for msg in error_msg %}
             <p>{{ msg }}</p>

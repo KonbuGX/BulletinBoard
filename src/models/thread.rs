@@ -21,6 +21,12 @@ pub struct NewThread{
 
 //スレッドネーム取得用構造体
 #[derive(Deserialize,Clone)]
+pub struct AddTreadSearchParams{
+    pub tname: String,
+}
+
+//スレッドネーム取得用構造体
+#[derive(Deserialize,Clone)]
 pub struct AddTreadParams{
     pub text: String,
 }

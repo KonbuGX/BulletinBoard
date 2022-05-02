@@ -16,12 +16,14 @@ mod schema;
 mod error;
 use error::MyError;
 use models::Thread;
+use models::AddTreadSearchParams;
 use models::AddTreadParams;
 use models::DeleteTreadParams;
 use models::ThreadComment;
 use models::GetThreadParams;
 use models::AddCommentParams;
 use service::select_all_thred;
+use service::select_thred_name;
 use service::insert_thread;
 use service::remove_thread;
 use service::validation_thread;
@@ -89,6 +91,20 @@ async fn delete_thread(params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::
     Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
 }
 
+//検索ボタン押下時
+#[post("/searchThread")]
+async fn search_thread(params: web::Form<AddTreadSearchParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+    let conn = db.get()?;
+    let tname = params.tname.clone();
+    let thread_list = select_thred_name(tname,&conn);
+    let error_msg = Vec::new();
+    let html = IndexTemplate {thread_list,error_msg};
+    let response_body = html.render()?;
+    Ok(HttpResponse::Ok()
+    .content_type("text/html")
+    .body(response_body))
+}
+
 //タスクのコメント画面表示時
 #[post("/threadComment")]
 pub async fn thread_comment(params: web::Form<GetThreadParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
@@ -136,8 +152,8 @@ async fn main() -> Result<(),actix_web::Error> {
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
     let pool = Pool::new(manager).expect("Failed pool");
     
-    HttpServer::new(move || App::new().service(index).service(add_thread).service(delete_thread)
-    .service(thread_comment).service(add_thread_comment)
+    HttpServer::new(move || App::new().service(index).service(add_thread).service(search_thread)
+    .service(delete_thread).service(thread_comment).service(add_thread_comment)
     .service(Files::new("/public", "./public").show_files_listing()).data(pool.clone()))
     .bind(&bind_address)?
     .run()

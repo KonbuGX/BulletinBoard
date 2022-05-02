@@ -1,5 +1,30 @@
 *{margin:0;padding:0;}
 
+/*ヘッダーのデザイン*/
+.header{
+    overflow: hidden;
+}
+
+/*タイトルのデザイン*/
+.title{
+    width: 12%; 
+    margin: 20px 30px;
+    padding: auto;
+    font-size: 24px;
+    float: left;
+}
+
+/*検索エリアのデザイン*/
+.searchArea{
+    width: 40%; 
+    margin: 20px 0px 0px 20%;
+    padding: auto;
+    font-size: 18px;
+    float: left;
+    justify-content:flex-end;
+    display:flex;
+}
+
 /*スレッドリストのデザイン*/
 .threadList,.commentList{width: 80%;margin: 10% 30%;padding: auto;}
 
@@ -16,10 +41,10 @@
 /*スレッドの追加エリアのデザイン*/
 .msgArea{font-size: 18px;color: red;text-align: center;}
 
-/*タイトル、スレッド名のデザイン*/
-.title,.threadName{
+/*スレッド名のデザイン*/
+.threadName{
     width: 80%; 
-    margin: 3% auto;
+    margin: 3% 10%;
     padding: auto;
     text-align: center;
     font-size: 24px;
