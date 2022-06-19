@@ -21,7 +21,7 @@ pub fn select_thred_name(tname: String,conn: &PooledConnection<ConnectionManager
 }
 
 //Threadのレコードをインサート
-pub fn insert_thread(name: String,conn: PooledConnection<ConnectionManager<SqliteConnection>>){
+pub fn insert_thread(name: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
     let thread_list = select_all_thred(&conn);
 
     //threadIdの付番処理
@@ -38,7 +38,7 @@ pub fn insert_thread(name: String,conn: PooledConnection<ConnectionManager<Sqlit
     }
     
     let new_thread = NewThread{thread_id:id,thread_name:name};
-    diesel::insert_into(thread).values(new_thread).execute(&conn).expect("Insert Error Thread");
+    diesel::insert_into(thread).values(new_thread).execute(conn).expect("Insert Error Thread");
 }
 
 //Threadのレコードをデリート

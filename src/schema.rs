@@ -1,4 +1,13 @@
 table! {
+    account (account_no) {
+        account_no -> Integer,
+        account_name -> Text,
+        password -> Text,
+        lastupdate -> Nullable<Timestamp>,
+    }
+}
+
+table! {
     thread (thread_id) {
         thread_id -> Integer,
         thread_name -> Text,
@@ -17,6 +26,7 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
+    account,
     thread,
     thread_comment,
 );

@@ -16,6 +16,27 @@
             </form>
         </div>
     </div>
+    <p class="nav-btn" onclick="hamburgerMenuShow()">
+		<span></span>
+		<span></span>
+		<span></span>
+	</p>
+    <nav id="navi">
+		<ul id="menu">
+            {% if login_status == "LOGIN" %}
+			    <li>
+                    <form action="/signout" method="post">
+                        <button class="signOutButton">サインアウト</button>
+                    </form>
+                </li>
+                <li><a onclick="showAccountDeleteArea()">アカウント削除</a></li>
+                <li><a onclick="showThreadAddArea()">スレッド追加</a></li>
+            {% else %}
+                <li><a onclick="location.href='/login'">ログイン</a></li>
+                <li><a onclick="location.href='/signup'">新規登録</a></li>
+            {% endif %}
+		</ul>
+	</nav>
     <div class="msgArea">
         {% for msg in error_msg %}
             <p>{{ msg }}</p>
@@ -40,12 +61,38 @@
         </div>
     {% endfor %}
     </div>
-   
-    <div class="addThreadArea">
-        <form action="/addThread" method="post">
-           <input name="text">
-           <button>add</button>
-        </form>
+    
+    <div id="addThreadDialog">
+        <div id="addThreadDialogBackground"></div>
+        <div id="addThreadDialogContent">
+            <div>
+                <div class="addThreadArea">
+                    <form action="/addThread" method="post">
+                       <input name="text">
+                       <button class="dialogButton dialogOkButton">追加</button>
+                    </form>
+                </div>
+                <button class="dialogButton" onclick="hideThreadAddArea()">いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteAccountDialog">
+        <div id="deleteAccountDialogBackground"></div>
+        <div id="deleteAccountDialogContent">
+            <div id="deleteAccountDialogMsg">
+                アカウントを削除いたします。<br>
+                削除してもよろしいでしょうか。
+            </div>
+            <div>
+                <div class="deleteAccountArea">
+                    <form action="/deleteAccount" method="post">
+                       <button class="dialogButton dialogOkButton">はい</button>
+                    </form>
+                </div>
+                <button class="dialogButton" onclick="hideAccountDeleteArea()">いいえ</button>
+            </div>
+        </div>
     </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
