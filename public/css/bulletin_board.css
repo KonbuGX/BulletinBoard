@@ -35,11 +35,11 @@
     margin-top: 5px;
 }
 
-/*スレッドの追加エリアのデザイン*/
+/*スレッドとコメントの追加エリアのデザイン*/
 .addThreadArea{width: 50%;margin: 5% 30%;padding: auto;}
 .addCommentArea{width: 80%;margin: 5% 30%;padding: auto;}
 
-/*スレッドの追加エリアのデザイン*/
+/*メッセージエリアのデザイン*/
 .msgArea{font-size: 18px;color: red;text-align: center;}
 
 /*スレッド名のデザイン*/

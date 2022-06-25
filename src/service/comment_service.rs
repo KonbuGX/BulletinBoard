@@ -50,7 +50,7 @@ pub fn validation_comment(params: &web::Form<AddCommentParams>) -> Vec<String>{
     let mut error_msg:Vec<String> = Vec::new();
 
     //必須項目チェック
-    if params.cname.clone() == String::from(""){
+    if params.cmt_name.clone() == String::from(""){
         error_msg.push(String::from("ネームが未入力です。"));
     }
     if params.cmt.clone() == String::from(""){

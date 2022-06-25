@@ -11,7 +11,7 @@
         <div class="title">掲示板</div>
         <div class="searchArea">
             <form action="/searchThread" method="post">
-               <input name="tname">
+               <input name="thd_name">
                <button>検索</button>
             </form>
         </div>
@@ -48,14 +48,14 @@
             <div>id: {{ temps.thread_id }}</div>
             <div class="rowThreadArea">
                 <form action="/threadComment" method="post">
-                    <input type="hidden" name="tid" value="{{ temps.thread_id }}">
-                    <input type="hidden" name="tname" value="{{ temps.thread_name }}">
+                    <input type="hidden" name="thd_id" value="{{ temps.thread_id }}">
+                    <input type="hidden" name="thd_name" value="{{ temps.thread_name }}">
                     <button>{{ temps.thread_name }}</button>
                 </form>
             </div>
             <form action="/deleteThread" method="post">
-                <input type="hidden" name="id" value="{{ temps.thread_id }}">
-                <input type="hidden" name="text" value="{{ temps.thread_name }}">
+                <input type="hidden" name="thd_id" value="{{ temps.thread_id }}">
+                <input type="hidden" name="thd_name" value="{{ temps.thread_name }}">
                 <button>delete</button>
             </form>
         </div>
@@ -68,7 +68,7 @@
             <div>
                 <div class="addThreadArea">
                     <form action="/addThread" method="post">
-                       <input name="text">
+                       <input name="thd_name">
                        <button class="dialogButton dialogOkButton">追加</button>
                     </form>
                 </div>

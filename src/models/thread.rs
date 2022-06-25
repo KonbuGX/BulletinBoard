@@ -22,18 +22,18 @@ pub struct NewThread{
 //スレッドネーム取得用構造体
 #[derive(Deserialize,Clone)]
 pub struct AddTreadSearchParams{
-    pub tname: String,
+    pub thd_name: String,
 }
 
 //スレッドネーム取得用構造体
 #[derive(Deserialize,Clone)]
 pub struct AddTreadParams{
-    pub text: String,
+    pub thd_name: String,
 }
 
 //スレッドの削除パラメータ取得用構造体
 #[derive(Deserialize,Clone)]
 pub struct DeleteTreadParams{
-    pub id: i32,
-    pub text: String,
+    pub thd_id: i32,
+    pub thd_name: String,
 }

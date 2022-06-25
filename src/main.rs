@@ -58,8 +58,8 @@ struct IndexTemplate{
 #[derive(Template)]
 #[template(path = "thread_comment.html")]
 struct CommentTemplate{
-    tid: i32,
-    tname: String,
+    thd_id: i32,
+    thd_name: String,
     comment_list: Vec<ThreadComment>,
     error_msg: Vec<String>,
     login_status: String,
@@ -135,7 +135,7 @@ async fn login_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redis
         set_session(&mut redis_conn, ACCTNO, &acct_no);
 
         //ホーム画面の表示
-        Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+        Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
     }
 }
 
@@ -144,7 +144,7 @@ async fn login_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redis
 async fn signout(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>) -> Result<HttpResponse,MyError>{
     let mut redis_conn = redis.get()?;
     delete_session(&mut redis_conn,ACCTNO);
-    Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+    Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
 //新規登録画面表示
@@ -199,7 +199,7 @@ async fn signup_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redi
         set_session(&mut redis_conn, ACCTNO, &acct_no);
 
         //ホーム画面の表示
-        Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+        Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
     }
 }
 
@@ -211,7 +211,7 @@ async fn delete_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redi
     let conn = db.get()?;
     remove_account(acct_no, conn);
     delete_session(&mut redis_conn,ACCTNO);
-    Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+    Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
 //登録ボタン押下時
@@ -230,33 +230,33 @@ async fn add_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisCon
         let response_body = html.render()?;
         Ok(HttpResponse::Ok().content_type("text/html").body(response_body))
     }else{
-        insert_thread(params.text.clone(),&conn);
+        insert_thread(params.thd_name.clone(),&conn);
 
         //ホーム画面の表示
-        Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+        Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
     }
     
 }
 
 //削除ボタン押下時
 #[post("/deleteThread")]
-async fn delete_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+async fn delete_thread(params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
 
     //スレッドとそれに付随するコメントを削除
-    remove_thread(params.id.clone(),params.text.clone(),&conn);
-    remove_comment(params.id.clone(),&conn);
+    remove_thread(params.thd_id.clone(),params.thd_name.clone(),&conn);
+    remove_comment(params.thd_id.clone(),&conn);
 
     //ホーム画面の表示
-    Ok(HttpResponse::SeeOther().header(header::LOCATION,"/").finish())
+    Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
 //検索ボタン押下時
 #[post("/searchThread")]
 async fn search_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,params: web::Form<AddTreadSearchParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
-    let tname = params.tname.clone();
-    let thread_list = select_thred_name(tname,&conn);
+    let thd_name = params.thd_name.clone();
+    let thread_list = select_thred_name(thd_name,&conn);
     let error_msg = Vec::new();
 
     let mut redis_conn = redis.get()?;
@@ -273,9 +273,9 @@ async fn search_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redis
 #[post("/threadComment")]
 pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
-    let tid = params.tid.clone();
-    let tname = params.tname.clone();
-    let comment_list = select_comment(&conn,tid);
+    let thd_id = params.thd_id.clone();
+    let thd_name = params.thd_name.clone();
+    let comment_list = select_comment(&conn,thd_id);
     let error_msg = Vec::new();
 
     //ログインの状態を取得
@@ -283,7 +283,7 @@ pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<
     let temp_status = get_session(&mut redis_conn, ACCTNO);
     let login_status = return_login_status(temp_status);
 
-    let html = CommentTemplate {tid,tname,comment_list,error_msg,login_status};
+    let html = CommentTemplate {thd_id,thd_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -294,15 +294,15 @@ pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<
 #[post("/addComment")]
 async fn add_thread_comment(params: web::Form<AddCommentParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
-    let tid = params.tid.clone();
-    let cname = params.cname.clone();
+    let thd_id = params.thd_id.clone();
+    let cname = params.cmt_name.clone();
     let cmt = params.cmt.clone();
-    let tname = params.tname.clone();
+    let thd_name = params.thd_name.clone();
 
     //エラーがない場合にインサート処理
     let error_msg = validation_comment(&params);
     if error_msg.len() <= 0 {
-        insert_comment(tid,cname,cmt,&conn);
+        insert_comment(thd_id,cname,cmt,&conn);
     }
     
     //ログインの状態を取得
@@ -311,8 +311,8 @@ async fn add_thread_comment(params: web::Form<AddCommentParams>,redis: web::Data
     let login_status = return_login_status(temp_status);
 
     //タスクのコメント画面の表示処理
-    let comment_list = select_comment(&conn,tid);
-    let html = CommentTemplate {tid,tname,comment_list,error_msg,login_status};
+    let comment_list = select_comment(&conn,thd_id);
+    let html = CommentTemplate {thd_id,thd_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -334,7 +334,7 @@ async fn main() -> Result<(),actix_web::Error> {
     HttpServer::new(move || {App::new().service(index).service(login).service(login_account).service(signout)
     .service(signup).service(signup_account).service(delete_account).service(add_thread).service(search_thread)
     .service(delete_thread).service(thread_comment).service(add_thread_comment)
-    .service(Files::new("/public", "./public").show_files_listing()).data(pool.clone()).data(redis_pool.clone())})
+    .service(Files::new("/public", "./public").show_files_listing()).app_data(web::Data::new(pool.clone())).app_data(web::Data::new(redis_pool.clone()))})
     .bind(&bind_address)?
     .run()
     .await?;

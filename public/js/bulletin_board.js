@@ -25,7 +25,7 @@ function showThreadAddArea() {
     return;
 }
 
-//スレッド追加エリアの表示・非表示の処理
+//アカウント削除エリアの表示・非表示の処理
 function hideAccountDeleteArea() {
     var dialog = document.getElementById("deleteAccountDialog");
     dialog.style.display = "none";

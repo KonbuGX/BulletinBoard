@@ -36,7 +36,7 @@
             {% endif %}
 		</ul>
 	</nav>
-    <div class="threadName">{{ tname }}</div>
+    <div class="threadName">{{ thd_name }}</div>
     <div class="msgArea">
         {% for msg in error_msg %}
             <p>{{ msg }}</p>
@@ -52,11 +52,11 @@
     </div>
     <div class="addCommentArea">
         <form action="/addComment" method="post">
-            <p>ネーム：<input name="cname"></p>
+            <p>ネーム：<input name="cmt_name"></p>
             <p>コメント：<input name="cmt"></p>
-            <input type="hidden" name="tid" value="{{ tid }}">
-            <input type="hidden" name="tname" value="{{ tname }}">
-            <button>add</button>
+            <input type="hidden" name="thd_id" value="{{ thd_id }}">
+            <input type="hidden" name="thd_name" value="{{ thd_name }}">
+            <button>追加</button>
         </form>
     </div>
 
@@ -66,7 +66,7 @@
             <div>
                 <div class="addThreadArea">
                     <form action="/addThread" method="post">
-                       <input name="text">
+                       <input name="thd_name">
                        <button class="dialogButton dialogOkButton">追加</button>
                     </form>
                 </div>
