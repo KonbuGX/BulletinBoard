@@ -10,6 +10,9 @@ use diesel::r2d2::{Pool,ConnectionManager};
 use diesel::sqlite::{SqliteConnection};
 use actix_files::Files;
 use pwhash::bcrypt;
+use std::collections::HashMap;
+use once_cell::sync::OnceCell;
+use uuid::Uuid;
 
 mod models;
 mod service;
@@ -45,7 +48,9 @@ use session_management::set_session;
 use session_management::get_session;
 use session_management::delete_session;
 
-const ACCTNO: &str = "acct_no";
+static ACCTNO: OnceCell<String> = OnceCell::new();
+static ACCTNAME: OnceCell<String> = OnceCell::new();
+static SESSION_ID: OnceCell<String> = OnceCell::new();
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -60,6 +65,7 @@ struct IndexTemplate{
 struct CommentTemplate{
     thd_id: i32,
     thd_name: String,
+    cmt_name: String,
     comment_list: Vec<ThreadComment>,
     error_msg: Vec<String>,
     login_status: String,
@@ -87,10 +93,11 @@ async fn index(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnecti
     let conn = db.get()?;
     let thread_list = select_all_thred(&conn);
     let error_msg = Vec::new();
+
     let mut redis_conn = redis.get()?;
-    let temp_status = get_session(&mut redis_conn, ACCTNO);
-    let login_status = return_login_status(temp_status);
-    
+    let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+    let login_status = return_login_status(&acct_info);
+
     let html = IndexTemplate {login_status,thread_list,error_msg};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
@@ -129,10 +136,15 @@ async fn login_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redis
     }else{
         //アカウントナンバーをセッションに追加。
         let acct_name = params.acct_name.clone();
-        let temp_list = select_account_byname(acct_name, &conn);
+        let temp_list = select_account_byname(&acct_name, &conn);
         let acct_no = temp_list[0].account_no;
         let mut redis_conn = redis.get()?;
-        set_session(&mut redis_conn, ACCTNO, &acct_no);
+        &SESSION_ID.set(Uuid::new_v4().to_string());
+
+        let mut account_info: HashMap<&String,String> = HashMap::new();
+        account_info.insert(ACCTNO.get().unwrap(), acct_no.to_string());
+        account_info.insert(ACCTNAME.get().unwrap(), acct_name);
+        set_session(&mut redis_conn,&SESSION_ID, account_info);
 
         //ホーム画面の表示
         Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
@@ -143,7 +155,11 @@ async fn login_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redis
 #[post("/signout")]
 async fn signout(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>) -> Result<HttpResponse,MyError>{
     let mut redis_conn = redis.get()?;
-    delete_session(&mut redis_conn,ACCTNO);
+    let account_info = vec![ACCTNO.get().unwrap(),ACCTNAME.get().unwrap()];
+    delete_session(&mut redis_conn,&SESSION_ID, account_info);
+    //「""」をセットしてセッションIDがない状態を表す
+    &SESSION_ID.set(String::from(""));
+
     Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
@@ -193,10 +209,15 @@ async fn signup_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redi
         //パスワードはハッシュ化してインサート。
         let acct_name = params.acct_name.clone();
         let pwd = bcrypt::hash(params.pwd.clone()).unwrap();
-        insert_account(acct_no,acct_name,pwd,&conn);
+        insert_account(acct_no,&acct_name,pwd,&conn);
 
+        //アカウント情報をセッションに追加
+        &SESSION_ID.set(Uuid::new_v4().to_string());
         let mut redis_conn = redis.get()?;
-        set_session(&mut redis_conn, ACCTNO, &acct_no);
+        let mut account_info: HashMap<&String,String> = HashMap::new();
+        account_info.insert(ACCTNO.get().unwrap(), acct_no.to_string());
+        account_info.insert(ACCTNAME.get().unwrap(), acct_name);
+        set_session(&mut redis_conn, &SESSION_ID, account_info);
 
         //ホーム画面の表示
         Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
@@ -207,25 +228,35 @@ async fn signup_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::Redi
 #[post("/deleteAccount")]
 async fn delete_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let mut redis_conn = redis.get()?;
-    let acct_no = get_session(&mut redis_conn, ACCTNO);
+    let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+    let mut acct_no = 9999;
+    if let Some(v) = acct_info.get(ACCTNO.get().unwrap()) {
+        acct_no = v.parse::<i32>().unwrap();
+    }
+
     let conn = db.get()?;
+    let account_info_keys = vec![ACCTNO.get().unwrap(),ACCTNAME.get().unwrap()];
     remove_account(acct_no, conn);
-    delete_session(&mut redis_conn,ACCTNO);
+    delete_session(&mut redis_conn,&SESSION_ID, account_info_keys);
+
+    //「""」をセットしてセッションIDがない状態を表す
+    &SESSION_ID.set(String::from(""));
     Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
 //登録ボタン押下時
 #[post("/addThread")]
-async fn add_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,params: web::Form<AddTreadParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+async fn add_thread(params: web::Form<AddTreadParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
-    let mut redis_conn = redis.get()?;
 
     //エラーがあればインサート処理をせずエラーメッセージを表示
     let error_msg = validation_thread(&params);
     if error_msg.len() > 0{
         let thread_list = select_all_thred(&conn);
-        let temp_status = get_session(&mut redis_conn, ACCTNO);
-        let login_status = return_login_status(temp_status);
+        let mut redis_conn = redis.get()?;
+        let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+        let login_status = return_login_status(&acct_info);
+
         let html = IndexTemplate {login_status,thread_list,error_msg};
         let response_body = html.render()?;
         Ok(HttpResponse::Ok().content_type("text/html").body(response_body))
@@ -253,15 +284,15 @@ async fn delete_thread(params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::
 
 //検索ボタン押下時
 #[post("/searchThread")]
-async fn search_thread(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,params: web::Form<AddTreadSearchParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+async fn search_thread(params: web::Form<AddTreadSearchParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
     let thd_name = params.thd_name.clone();
     let thread_list = select_thred_name(thd_name,&conn);
     let error_msg = Vec::new();
 
     let mut redis_conn = redis.get()?;
-    let temp_status = get_session(&mut redis_conn, ACCTNO);
-    let login_status = return_login_status(temp_status);
+    let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+    let login_status = return_login_status(&acct_info);
     let html = IndexTemplate {login_status,thread_list,error_msg};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
@@ -280,10 +311,16 @@ pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<
 
     //ログインの状態を取得
     let mut redis_conn = redis.get()?;
-    let temp_status = get_session(&mut redis_conn, ACCTNO);
-    let login_status = return_login_status(temp_status);
+    let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+    let login_status = return_login_status(&acct_info);
 
-    let html = CommentTemplate {thd_id,thd_name,comment_list,error_msg,login_status};
+    //アカウント名の取得
+    let mut cmt_name = String::from("名無し");
+    if let Some(v) = acct_info.get(ACCTNAME.get().unwrap()) {
+        cmt_name = v.to_string();
+    }
+
+    let html = CommentTemplate {thd_id,thd_name,cmt_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -295,24 +332,30 @@ pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<
 async fn add_thread_comment(params: web::Form<AddCommentParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
     let thd_id = params.thd_id.clone();
-    let cname = params.cmt_name.clone();
+    let cmt_name = params.cmt_name.clone();
     let cmt = params.cmt.clone();
     let thd_name = params.thd_name.clone();
 
     //エラーがない場合にインサート処理
     let error_msg = validation_comment(&params);
     if error_msg.len() <= 0 {
-        insert_comment(thd_id,cname,cmt,&conn);
+        insert_comment(thd_id,cmt_name,cmt,&conn);
     }
     
     //ログインの状態を取得
     let mut redis_conn = redis.get()?;
-    let temp_status = get_session(&mut redis_conn, ACCTNO);
-    let login_status = return_login_status(temp_status);
+    let acct_info = get_session(&mut redis_conn, &SESSION_ID);
+    let login_status = return_login_status(&acct_info);
+
+    //アカウント名の取得
+    let mut cmt_name = String::from("名無し");
+    if let Some(v) = acct_info.get(ACCTNAME.get().unwrap()) {
+        cmt_name = v.to_string();
+    }
 
     //タスクのコメント画面の表示処理
     let comment_list = select_comment(&conn,thd_id);
-    let html = CommentTemplate {thd_id,thd_name,comment_list,error_msg,login_status};
+    let html = CommentTemplate {thd_id,thd_name,cmt_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -322,6 +365,11 @@ async fn add_thread_comment(params: web::Form<AddCommentParams>,redis: web::Data
 #[actix_rt::main]
 async fn main() -> Result<(),actix_web::Error> {
     dotenv().ok();
+
+    //定数の初期化
+    ACCTNO.set(String::from("acct_no")).unwrap();
+    ACCTNAME.set(String::from("acct_name")).unwrap();
+
     //データベース、Redisのプール作成を行う
     let bind_address = env::var("ADDRESS").expect("ADDRESS is not set");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

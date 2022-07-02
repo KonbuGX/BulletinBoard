@@ -20,7 +20,7 @@ pub fn select_comment(conn: &PooledConnection<ConnectionManager<SqliteConnection
 }
 
 //Threadのレコードをインサート
-pub fn insert_comment(tid: i32,cname: String,cmt: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+pub fn insert_comment(tid: i32,cmt_name: String,cmt: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
     let thread_comment_list = select_all_comment(&conn);
 
     //commentNoの付番処理
@@ -36,7 +36,7 @@ pub fn insert_comment(tid: i32,cname: String,cmt: String,conn: &PooledConnection
         no = 1;
     }
     
-    let new_thread_comment = NewThreadComment{thread_id:tid,comment_no:no,comment_name:cname,comment:cmt};
+    let new_thread_comment = NewThreadComment{thread_id:tid,comment_no:no,comment_name:cmt_name,comment:cmt};
     diesel::insert_into(thread_comment).values(new_thread_comment).execute(conn).expect("Insert Error Thread");
 }
 

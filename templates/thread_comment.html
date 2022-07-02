@@ -1,21 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link rel="stylesheet" href="/public/css/bulletin_board.css">
-    <title>掲示板アプリ</title>
-</head>
-<body>
-    <div class="header">
-        <div class="title">掲示板</div>
-    </div>
+{% extends "main.html" %}
+{% block content %}
     <p class="back-btn" onclick="location.href='/'">
-		<span></span>
-		<span></span>
-		<span></span>
-	</p>
-    <p class="nav-btn" onclick="hamburgerMenuShow()">
 		<span></span>
 		<span></span>
 		<span></span>
@@ -52,7 +37,7 @@
     </div>
     <div class="addCommentArea">
         <form action="/addComment" method="post">
-            <p>ネーム：<input name="cmt_name"></p>
+            <p>ネーム：<input name="cmt_name" value="{{ cmt_name }}"></p>
             <p>コメント：<input name="cmt"></p>
             <input type="hidden" name="thd_id" value="{{ thd_id }}">
             <input type="hidden" name="thd_name" value="{{ thd_name }}">
@@ -92,9 +77,4 @@
             </div>
         </div>
     </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<script src="/public/js/bulletin_board.js"></script>
-</body>
-</html>
+{% endblock %}

@@ -1,5 +1,15 @@
 $(function () {
-    
+    /*パスワード表示・非表示処理*/
+    var password = '#pwd';
+    var checkPassword = '#displayPassword';
+
+    $(checkPassword).change(function () {
+        if ($(this).prop('checked')) {
+            $(password).attr('type', 'text');
+        } else {
+            $(password).attr('type', 'password');
+        }
+    });
 });
 
 //ハンバーガーメニューの表示・非表示の処理

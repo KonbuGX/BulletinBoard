@@ -271,13 +271,20 @@
     margin:50px auto;
 }
 
+/*ログイン、新規登録画面のフォームのデザイン*/
 .loginFormArea,.signupFormArea{
     width: 60%;
     margin: auto 30%;
 }
 
+/*サインアウトボタンのデザイン*/
 .signOutButton{
     color: white;
     border: none;
     background: none;
+}
+
+/*サインアウトボタンのデザイン*/
+.loginButton,.signUpButton{
+    display: block;
 }

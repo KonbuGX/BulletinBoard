@@ -15,9 +15,9 @@ pub struct Account{
 //スレッドのインサート用構造体
 #[derive(Debug,Insertable)]
 #[table_name = "account"]
-pub struct NewAccount{
+pub struct NewAccount<'a>{
     pub account_no: i32,
-    pub account_name: String,
+    pub account_name: &'a String,
     pub password: String,
 }
 
