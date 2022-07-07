@@ -19,10 +19,10 @@ pub struct NewThread{
     pub thread_name: String,
 }
 
-//スレッドネーム取得用構造体
+//検索キーワード取得用構造体
 #[derive(Deserialize,Clone)]
 pub struct AddTreadSearchParams{
-    pub thd_name: String,
+    pub search_keyword: String,
 }
 
 //スレッドネーム取得用構造体

@@ -3,7 +3,7 @@
 {% block header %}
         <div class="searchArea">
             <form action="/searchThread" method="post">
-               <input name="thd_name">
+               <input name="search_keyword" value="{{ search_keyword }}">
                <button>検索</button>
             </form>
         </div>
@@ -13,6 +13,8 @@
     <nav id="navi">
 		<ul id="menu">
             {% if login_status == "LOGIN" %}
+                <li>ログイン中:{{ acct_name }}</li>
+                <li><a onclick="location.href='/'">ホーム</a></li>
 			    <li>
                     <form action="/signout" method="post">
                         <button class="signOutButton">サインアウト</button>

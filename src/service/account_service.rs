@@ -29,8 +29,16 @@ pub fn insert_account(acct_no: i32,acct_name: &String,pwd: String,conn: &PooledC
     diesel::insert_into(account).values(new_account).execute(conn).expect("Insert Error Account");
 }
 
+//アカウント名の取得
+pub fn get_acct_name(acct_name: Option<&String>) -> String{
+    match acct_name {
+        Some(v) => return v.to_string(),
+        None => return String::from("名無し")
+    }
+}
+
 //ログイン状態を確認
-pub fn return_login_status(acct_info: &HashMap<String, String>) -> String {
+pub fn get_login_status(acct_info: &HashMap<String, String>) -> String {
     let acct_no_key = String::from("acct_no");
     if let Some(v) = acct_info.get(&acct_no_key) {
         let not_login_acct_no = 9999.to_string();

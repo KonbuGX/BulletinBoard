@@ -14,8 +14,8 @@ pub fn select_all_thred(conn: &PooledConnection<ConnectionManager<SqliteConnecti
 }
 
 //Threadのリストをネームで取得
-pub fn select_thred_name(thd_name: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<Thread>{
-    let format = format!("%{}%", thd_name);
+pub fn select_thred_name(search_keyword: &String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<Thread>{
+    let format = format!("%{}%", search_keyword);
     let thread_list = thread.filter(thread_name.like(format)).load::<Thread>(conn).expect("Error loading Thread");
     return thread_list;
 }

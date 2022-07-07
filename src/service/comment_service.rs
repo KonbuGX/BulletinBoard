@@ -13,36 +13,36 @@ pub fn select_all_comment(conn: &PooledConnection<ConnectionManager<SqliteConnec
     return comment_list;
 }
 
-//ThreadCommentのリストをid指定で取得
-pub fn select_comment(conn: &PooledConnection<ConnectionManager<SqliteConnection>>,tid: i32) -> Vec<ThreadComment>{
-    let comment_list = thread_comment.filter(thread_id.eq(tid)).load::<ThreadComment>(conn).expect("Error loading Thread");
+//ThreadCommentのリストをスレッドのid指定で取得
+pub fn select_comment(conn: &PooledConnection<ConnectionManager<SqliteConnection>>,thd_id: i32) -> Vec<ThreadComment>{
+    let comment_list = thread_comment.filter(thread_id.eq(thd_id)).load::<ThreadComment>(conn).expect("Error loading Thread");
     return comment_list;
 }
 
 //Threadのレコードをインサート
-pub fn insert_comment(tid: i32,cmt_name: String,cmt: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+pub fn insert_comment(thd_id: i32,cmt_name: String,cmt: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
     let thread_comment_list = select_all_comment(&conn);
 
     //commentNoの付番処理
-    let mut no:i32 = 0;
+    let mut cmt_no:i32 = 0;
     if thread_comment_list.len() > 0 {
         for temp in &thread_comment_list {
-            if temp.comment_no > no {
-                no = temp.comment_no;
+            if temp.comment_no > cmt_no {
+                cmt_no = temp.comment_no;
             }  
         }
-        no += 1;
+        cmt_no += 1;
     }else {
-        no = 1;
+        cmt_no = 1;
     }
     
-    let new_thread_comment = NewThreadComment{thread_id:tid,comment_no:no,comment_name:cmt_name,comment:cmt};
+    let new_thread_comment = NewThreadComment{thread_id:thd_id,comment_no:cmt_no,comment_name:cmt_name,comment:cmt};
     diesel::insert_into(thread_comment).values(new_thread_comment).execute(conn).expect("Insert Error Thread");
 }
 
 //コメントのレコードをデリート
-pub fn remove_comment(id: i32,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
-    diesel::delete(thread_comment.filter(thread_id.eq(id))).execute(conn).expect("Delete Error Comment");
+pub fn remove_comment(thd_id: i32,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+    diesel::delete(thread_comment.filter(thread_id.eq(thd_id))).execute(conn).expect("Delete Error Comment");
 }
 
 //チェック処理

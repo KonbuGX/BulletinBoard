@@ -34,13 +34,14 @@ use service::select_thred_name;
 use service::insert_thread;
 use service::remove_thread;
 use service::validation_thread;
-use service::return_login_status;
+use service::get_login_status;
 use service::select_comment;
 use service::insert_comment;
 use service::remove_comment;
 use service::validation_comment;
 use service::select_all_account;
 use service::select_account_byname;
+use service::get_acct_name;
 use service::insert_account;
 use service::remove_account;
 use service::validation_account;
@@ -55,7 +56,9 @@ static SESSION_ID: OnceCell<String> = OnceCell::new();
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate{
+    acct_name: String,
     login_status: String,
+    search_keyword: String,
     thread_list: Vec<Thread>,
     error_msg: Vec<String>,
 }
@@ -65,6 +68,7 @@ struct IndexTemplate{
 struct CommentTemplate{
     thd_id: i32,
     thd_name: String,
+    acct_name: String,
     cmt_name: String,
     comment_list: Vec<ThreadComment>,
     error_msg: Vec<String>,
@@ -94,11 +98,18 @@ async fn index(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnecti
     let thread_list = select_all_thred(&conn);
     let error_msg = Vec::new();
 
+    //ログインの状態を取得
     let mut redis_conn = redis.get()?;
     let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-    let login_status = return_login_status(&acct_info);
+    let login_status = get_login_status(&acct_info);
 
-    let html = IndexTemplate {login_status,thread_list,error_msg};
+    //アカウント名の取得
+    let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
+
+    //検索エリアのキーワードの初期化
+    let search_keyword = String::from("");
+
+    let html = IndexTemplate {acct_name,login_status,search_keyword,thread_list,error_msg};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -255,9 +266,15 @@ async fn add_thread(params: web::Form<AddTreadParams>,redis: web::Data<r2d2_redi
         let thread_list = select_all_thred(&conn);
         let mut redis_conn = redis.get()?;
         let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-        let login_status = return_login_status(&acct_info);
+        let login_status = get_login_status(&acct_info);
 
-        let html = IndexTemplate {login_status,thread_list,error_msg};
+        //アカウント名の取得
+        let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
+
+        //検索エリアのキーワードの初期化
+        let search_keyword = String::from("");
+
+        let html = IndexTemplate {acct_name,login_status,search_keyword,thread_list,error_msg};
         let response_body = html.render()?;
         Ok(HttpResponse::Ok().content_type("text/html").body(response_body))
     }else{
@@ -286,14 +303,18 @@ async fn delete_thread(params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::
 #[post("/searchThread")]
 async fn search_thread(params: web::Form<AddTreadSearchParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
-    let thd_name = params.thd_name.clone();
-    let thread_list = select_thred_name(thd_name,&conn);
+    let search_keyword = params.search_keyword.clone();
+    let thread_list = select_thred_name(&search_keyword,&conn);
     let error_msg = Vec::new();
 
     let mut redis_conn = redis.get()?;
     let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-    let login_status = return_login_status(&acct_info);
-    let html = IndexTemplate {login_status,thread_list,error_msg};
+    let login_status = get_login_status(&acct_info);
+
+    //アカウント名の取得
+    let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
+
+    let html = IndexTemplate {acct_name,login_status,search_keyword,thread_list,error_msg};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -312,15 +333,13 @@ pub async fn thread_comment(params: web::Form<GetThreadParams>,redis: web::Data<
     //ログインの状態を取得
     let mut redis_conn = redis.get()?;
     let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-    let login_status = return_login_status(&acct_info);
+    let login_status = get_login_status(&acct_info);
 
     //アカウント名の取得
-    let mut cmt_name = String::from("名無し");
-    if let Some(v) = acct_info.get(ACCTNAME.get().unwrap()) {
-        cmt_name = v.to_string();
-    }
+    let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
+    let cmt_name = acct_name.clone();
 
-    let html = CommentTemplate {thd_id,thd_name,cmt_name,comment_list,error_msg,login_status};
+    let html = CommentTemplate {thd_id,thd_name,acct_name,cmt_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
@@ -345,17 +364,15 @@ async fn add_thread_comment(params: web::Form<AddCommentParams>,redis: web::Data
     //ログインの状態を取得
     let mut redis_conn = redis.get()?;
     let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-    let login_status = return_login_status(&acct_info);
+    let login_status = get_login_status(&acct_info);
 
     //アカウント名の取得
-    let mut cmt_name = String::from("名無し");
-    if let Some(v) = acct_info.get(ACCTNAME.get().unwrap()) {
-        cmt_name = v.to_string();
-    }
+    let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
+    let cmt_name = acct_name.clone();
 
     //タスクのコメント画面の表示処理
     let comment_list = select_comment(&conn,thd_id);
-    let html = CommentTemplate {thd_id,thd_name,cmt_name,comment_list,error_msg,login_status};
+    let html = CommentTemplate {thd_id,thd_name,acct_name,cmt_name,comment_list,error_msg,login_status};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()
     .content_type("text/html")
