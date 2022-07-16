@@ -27,3 +27,16 @@ pub struct AddAccountParams{
     pub acct_name: String,
     pub pwd: String,
 }
+
+//編集後アカウントネーム取得用構造体
+#[derive(Deserialize,Clone)]
+pub struct EditAccountNameParams{
+    pub edit_acct_name: String,
+}
+
+//パスワード取得用構造体
+#[derive(Deserialize,Clone)]
+pub struct EditPasswordParams{
+    pub current_password: String,
+    pub edit_password: String,
+}

@@ -1,12 +1,7 @@
 {% extends "main.html" %}
 
 {% block header %}
-        <div class="searchArea">
-            <form action="/searchThread" method="post">
-               <input name="search_keyword" value="{{ search_keyword }}">
-               <button>検索</button>
-            </form>
-        </div>
+    <p class="title" onclick="location.href='/'">ホーム</p>
 {% endblock %}
 
 {% block content %}
@@ -29,31 +24,17 @@
             {% endif %}
 		</ul>
 	</nav>
-    <div class="msgArea">
-        {% for msg in error_msg %}
-            <p>{{ msg }}</p>
-        {% endfor %}
+    <div class="mainContent">
+        <nav id="acctInfo_navi">
+            <ul id="menu">
+                <li><a onclick="location.href='/mypage'">マイページ</a></li>
+                <li><a onclick="location.href='/account'">アカウント名変更</a></li>
+                <li><a onclick="location.href='/password'">パスワード変更</a></li>
+            </ul>
+        </nav>
+        <p class="acct_name">{{ acct_name }}</p>
     </div>
-    <div class="threadList">
-    {% for temps in thread_list %}
-        <div class="threadContentns">
-            <div>id: {{ temps.thread_id }}</div>
-            <div class="rowThreadArea">
-                <form action="/threadComment" method="post">
-                    <input type="hidden" name="thd_id" value="{{ temps.thread_id }}">
-                    <input type="hidden" name="thd_name" value="{{ temps.thread_name }}">
-                    <button>{{ temps.thread_name }}</button>
-                </form>
-            </div>
-            <form action="/deleteThread" method="post">
-                <input type="hidden" name="thd_id" value="{{ temps.thread_id }}">
-                <input type="hidden" name="thd_name" value="{{ temps.thread_name }}">
-                <button>delete</button>
-            </form>
-        </div>
-    {% endfor %}
-    </div>
-    
+
     <div id="addThreadDialog">
         <div id="addThreadDialogBackground"></div>
         <div id="addThreadDialogContent">

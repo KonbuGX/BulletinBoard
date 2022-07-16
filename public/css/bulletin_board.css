@@ -134,6 +134,31 @@
     transform: translate(100px,0px);
 }
 
+.mainContent{
+    width: 90%;
+    margin: 2% 2%;
+    display: inline-block;
+}
+
+/*マイページのナビゲーションのデザイン*/
+#acctInfo_navi{
+    box-sizing: border-box;
+    float: left;
+}
+#acctInfo_navi ul li {
+    font-size: 24px;
+    list-style: none;
+    cursor: pointer;
+}
+
+p.acct_name{
+    text-align: center;
+    font-size: 32px;
+    width: 40%;
+    float: left;
+    margin-left: 14%;
+}
+
 /*ハンバーガーメニュー内のデザイン*/
 #navi {
     position: fixed;
@@ -272,7 +297,8 @@
 }
 
 /*ログイン、新規登録画面のフォームのデザイン*/
-.loginFormArea,.signupFormArea{
+.loginFormArea,.signupFormArea,.deleteAccountArea,.editAccountNameArea,
+.editPasswordNameArea{
     width: 60%;
     margin: auto 30%;
 }
@@ -285,6 +311,10 @@
 }
 
 /*サインアウトボタンのデザイン*/
-.loginButton,.signUpButton{
+.loginButton,.signUpButton,.editButton{
     display: block;
+}
+
+.info_msg{
+    color: deepskyblue;
 }

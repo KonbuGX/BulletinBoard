@@ -1,5 +1,5 @@
 use actix_web::{web};
-use crate::models::{Account,NewAccount,AddAccountParams};
+use crate::models::{Account,NewAccount,AddAccountParams,EditAccountNameParams,EditPasswordParams};
 use diesel::prelude::*;
 use crate::schema::account::dsl::*;
 use std::vec::Vec;
@@ -18,8 +18,7 @@ pub fn select_all_account(conn: &PooledConnection<ConnectionManager<SqliteConnec
 
 //Accountのリストをネームで取得
 pub fn select_account_byname(acct_name: &String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<Account>{
-    let format = format!("%{}%", acct_name);
-    let account_list = account.filter(account_name.like(format)).load::<Account>(conn).expect("Error loading Account");
+    let account_list = account.filter(account_name.eq(acct_name)).load::<Account>(conn).expect("Error loading Account");
     return account_list;
 }
 
@@ -29,11 +28,29 @@ pub fn insert_account(acct_no: i32,acct_name: &String,pwd: String,conn: &PooledC
     diesel::insert_into(account).values(new_account).execute(conn).expect("Insert Error Account");
 }
 
+//Accountのaccount_nameをアップデート
+pub fn update_account_info(acct_no: String,edit_acct_name: &String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+    diesel::update(account.filter(account_no.eq(acct_no.parse::<i32>().unwrap()))).set(account_name.eq(edit_acct_name)).execute(conn).expect("Update Error Account");
+}
+
+//Accountのpasswordをアップデート
+pub fn update_password(acct_no: String,edit_password: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+    diesel::update(account.filter(account_no.eq(acct_no.parse::<i32>().unwrap()))).set(password.eq(edit_password)).execute(conn).expect("Update Error Account");
+}
+
 //アカウント名の取得
 pub fn get_acct_name(acct_name: Option<&String>) -> String{
     match acct_name {
         Some(v) => return v.to_string(),
         None => return String::from("名無し")
+    }
+}
+
+//アカウントナンバーの取得
+pub fn get_acct_no(acct_no: Option<&String>) -> String{
+    match acct_no {
+        Some(v) => return v.to_string(),
+        None => return String::from("0")
     }
 }
 
@@ -97,15 +114,63 @@ pub fn validation_account(params: &web::Form<AddAccountParams>,status: String,
         if temp_list.len() > 0{
             //アカウントがある場合にパスワードのチェック
             let pwd = params.pwd.clone();
-            let acct_name = params.acct_name.clone();
-            let temp_list = select_account_byname(&acct_name,conn);
             let temp_pwd = &temp_list[0].password;
             if !bcrypt::verify(pwd,temp_pwd){
                 error_msg.push(String::from("パスワードが違います。"));
             }
-        }else {
+        }else{
             error_msg.push(String::from("アカウントが存在していません。"));
         }
+    }
+
+    return error_msg;
+}
+
+//アカウント名変更時のチャック
+pub fn validation_account_name(params: &web::Form<EditAccountNameParams>,acct_name: &String,
+    conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<String>{
+    let mut error_msg:Vec<String> = Vec::new();
+    let edit_acct_name = params.edit_acct_name.clone();
+    //必須項目チェック
+    if edit_acct_name == String::from(""){
+        error_msg.push(String::from("アカウント名が未入力です。"));
+        return error_msg;
+    }
+
+    //重複チェック
+    if &edit_acct_name != acct_name {
+        let temp_list = select_account_byname(&edit_acct_name,conn);
+        if temp_list.len() > 0 {
+            error_msg.push(String::from("アカウント名が重複しています。"));
+        }
+    }
+
+    return error_msg;
+}
+
+//パスワード変更時のチャック
+pub fn validation_password(params: &web::Form<EditPasswordParams>,acct_name: &String,
+    conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<String>{
+    let mut error_msg:Vec<String> = Vec::new();
+    
+    //必須項目チェック
+    let current_password = params.current_password.clone();
+    let edit_password = params.edit_password.clone();
+    if current_password == String::from("") || edit_password == String::from("") {
+        error_msg.push(String::from("パスワードが未入力です。"));
+        return error_msg;
+    }
+
+    //現在のパスワードのチャック
+    let temp_list = select_account_byname(&acct_name,conn);
+    let temp_pwd = &temp_list[0].password;
+    if !bcrypt::verify(current_password,temp_pwd){
+        error_msg.push(String::from("現在のパスワードが違います。"));
+    }
+
+    //変更後パスワードの文字数チェック
+    if edit_password.chars().count() < 8{
+        error_msg.push(String::from("変更後のパスワードの文字数を8文字以上にしてください。"));
     }
 
     return error_msg;
