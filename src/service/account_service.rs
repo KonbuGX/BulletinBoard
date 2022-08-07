@@ -29,12 +29,12 @@ pub fn insert_account(acct_no: i32,acct_name: &String,pwd: String,conn: &PooledC
 }
 
 //Accountのaccount_nameをアップデート
-pub fn update_account_info(acct_no: String,edit_acct_name: &String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+pub fn update_account_info(acct_no: &String,edit_acct_name: &String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
     diesel::update(account.filter(account_no.eq(acct_no.parse::<i32>().unwrap()))).set(account_name.eq(edit_acct_name)).execute(conn).expect("Update Error Account");
 }
 
 //Accountのpasswordをアップデート
-pub fn update_password(acct_no: String,edit_password: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
+pub fn update_password(acct_no: &String,edit_password: String,conn: &PooledConnection<ConnectionManager<SqliteConnection>>){
     diesel::update(account.filter(account_no.eq(acct_no.parse::<i32>().unwrap()))).set(password.eq(edit_password)).execute(conn).expect("Update Error Account");
 }
 
@@ -58,7 +58,7 @@ pub fn get_acct_no(acct_no: Option<&String>) -> String{
 pub fn get_login_status(acct_info: &HashMap<String, String>) -> String {
     let acct_no_key = String::from("acct_no");
     if let Some(v) = acct_info.get(&acct_no_key) {
-        let not_login_acct_no = 9999.to_string();
+        let not_login_acct_no = 0.to_string();
         if v != &not_login_acct_no {
             return ScreenStatus::LOGIN.to_string();
         }else{

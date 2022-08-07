@@ -41,12 +41,25 @@
                 {% endif %}
             </ul>
         </nav>
-        <div class="editAccountNameArea">
-            <form action="/account" method="post">
-                <p>現在のアカウントネーム：{{ acct_name }}</p>
-                <p>変更後のアカウントネーム：<input name="edit_acct_name"></p>
-                <button class="editButton">変更</button>
+        <div class="searchArea">
+            <form action="/searchThread_mypage" method="post">
+                <input name="search_keyword" value="{{ search_keyword }}">
+                <button>検索</button>
             </form>
+        </div>
+        <div class="threadList">
+        {% for thread in thread_list %}
+            <div class="threadContentns">
+                <div class="rowThreadArea">
+                    <form action="/deleteThread" method="post">
+                        <p>{{ thread.thread_name }}</p>
+                        <input type="hidden" name="thd_id" value="{{ thread.thread_id }}">
+                        <input type="hidden" name="thd_name" value="{{ thread.thread_name }}">
+                        <button>削除</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
         </div>
     </div>
 

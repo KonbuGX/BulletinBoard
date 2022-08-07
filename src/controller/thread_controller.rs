@@ -7,19 +7,17 @@ use crate::MyError;
 use crate::models::Thread;
 use crate::models::AddTreadSearchParams;
 use crate::models::AddTreadParams;
-use crate::models::DeleteTreadParams;
+
 use crate::models::ThreadComment;
 use crate::models::GetThreadParams;
 use crate::models::AddCommentParams;
 use crate::service::select_all_thred;
 use crate::service::select_thred_name;
 use crate::service::insert_thread;
-use crate::service::remove_thread;
 use crate::service::validation_thread;
 use crate::service::get_login_status;
 use crate::service::select_comment;
 use crate::service::insert_comment;
-use crate::service::remove_comment;
 use crate::service::validation_comment;
 use crate::service::get_acct_name;
 use crate::service::remove_account;
@@ -94,7 +92,7 @@ pub async fn signout(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisCo
 pub async fn delete_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let mut redis_conn = redis.get()?;
     let acct_info = get_session(&mut redis_conn, &SESSION_ID);
-    let mut acct_no = 9999;
+    let mut acct_no = 0;
     if let Some(v) = acct_info.get(ACCTNO.get().unwrap()) {
         acct_no = v.parse::<i32>().unwrap();
     }
@@ -138,19 +136,6 @@ pub async fn add_thread(params: web::Form<AddTreadParams>,redis: web::Data<r2d2_
         Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
     }
     
-}
-
-//削除ボタン押下時
-#[post("/deleteThread")]
-pub async fn delete_thread(params: web::Form<DeleteTreadParams>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
-    let conn = db.get()?;
-
-    //スレッドとそれに付随するコメントを削除
-    remove_thread(params.thd_id.clone(),params.thd_name.clone(),&conn);
-    remove_comment(params.thd_id.clone(),&conn);
-
-    //ホーム画面の表示
-    Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
 //検索ボタン押下時

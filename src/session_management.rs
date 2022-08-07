@@ -23,7 +23,7 @@ pub fn get_session(redis_conn: &mut r2d2::PooledConnection<r2d2_redis::RedisConn
         acct_info = r2d2_redis::redis::cmd("HGETALL").arg(session_id).query(redis_conn.deref_mut()).unwrap();
     }else {
         //ログインしていない状態を表す。
-        let acct_no = 9999;
+        let acct_no = 0;
         let acct_name = String::from("名無し");
         acct_info.insert(String::from("acct_no"), acct_no.to_string());
         acct_info.insert(String::from("acct_name"), acct_name);

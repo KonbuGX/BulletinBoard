@@ -14,7 +14,6 @@ pub fn routes(srv_cfg: &mut web::ServiceConfig){
     .service(delete_account)
     .service(add_thread)
     .service(search_thread)
-    .service(delete_thread)
     .service(thread_comment)
     .service(add_thread_comment)
     .service(mypage)
@@ -22,5 +21,8 @@ pub fn routes(srv_cfg: &mut web::ServiceConfig){
     .service(edit_account)
     .service(password)
     .service(edit_password)
+    .service(delete_thread_list)
+    .service(delete_thread)
+    .service(search_thread_mypage)
     .service(Files::new("/public", "./public").show_files_listing());
 }
