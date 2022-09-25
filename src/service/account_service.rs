@@ -9,6 +9,7 @@ use diesel::SqliteConnection;
 use pwhash::bcrypt;
 use crate::screen_status::ScreenStatus;
 use std::collections::HashMap;
+use crate::error_msg::{ErrorMsg,GetErrorMsg};
 
 //Accountのリストを全取得
 pub fn select_all_account(conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<Account>{
@@ -78,13 +79,17 @@ pub fn remove_account(acct_no: i32,conn: PooledConnection<ConnectionManager<Sqli
 pub fn validation_account(params: &web::Form<AddAccountParams>,status: String,
     conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<String>{
     let mut error_msg:Vec<String> = Vec::new();
+    let error_msg_struct = ErrorMsg{};
+    let mut error_key: String;
 
     //必須項目チェック
     if params.acct_name.clone() == String::from(""){
-        error_msg.push(String::from("アカウント名が未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("アカウント名")));
     }
     if params.pwd.clone() == String::from(""){
-        error_msg.push(String::from("パスワードが未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("パスワード")));
     }
 
     //新規登録のみのチェック処理
@@ -94,13 +99,15 @@ pub fn validation_account(params: &web::Form<AddAccountParams>,status: String,
         //重複チェック
         let temp_list = select_account_byname(&acct_name,conn);
         if temp_list.len() > 0{
-            error_msg.push(String::from("アカウント名が重複しています。"));
+            error_key = String::from("EM_ACCT_0001");
+            error_msg.push(error_msg_struct.get_error_msg(error_key));
         }
 
         //パスワードの文字数チェック
         let pwd = params.pwd.clone();
         if pwd.chars().count() < 8{
-            error_msg.push(String::from("パスワードの文字数を8文字以上にしてください。"));
+            error_key = String::from("EM_ACCT_0002");
+            error_msg.push(error_msg_struct.get_error_msg(error_key));
         }
 
         return error_msg;
@@ -116,10 +123,12 @@ pub fn validation_account(params: &web::Form<AddAccountParams>,status: String,
             let pwd = params.pwd.clone();
             let temp_pwd = &temp_list[0].password;
             if !bcrypt::verify(pwd,temp_pwd){
-                error_msg.push(String::from("パスワードが違います。"));
+                error_key = String::from("EM_ACCT_0003");
+                error_msg.push(error_msg_struct.get_error_msg(error_key));
             }
         }else{
-            error_msg.push(String::from("アカウントが存在していません。"));
+            error_key = String::from("EM_ACCT_0004");
+            error_msg.push(error_msg_struct.get_error_msg(error_key));
         }
     }
 
@@ -130,10 +139,13 @@ pub fn validation_account(params: &web::Form<AddAccountParams>,status: String,
 pub fn validation_account_name(params: &web::Form<EditAccountNameParams>,acct_name: &String,
     conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<String>{
     let mut error_msg:Vec<String> = Vec::new();
+    let error_msg_struct = ErrorMsg{};
+    let error_key: String;
     let edit_acct_name = params.edit_acct_name.clone();
     //必須項目チェック
     if edit_acct_name == String::from(""){
-        error_msg.push(String::from("アカウント名が未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("アカウント名")));
         return error_msg;
     }
 
@@ -141,7 +153,8 @@ pub fn validation_account_name(params: &web::Form<EditAccountNameParams>,acct_na
     if &edit_acct_name != acct_name {
         let temp_list = select_account_byname(&edit_acct_name,conn);
         if temp_list.len() > 0 {
-            error_msg.push(String::from("アカウント名が重複しています。"));
+            error_key = String::from("EM_ACCT_0001");
+            error_msg.push(error_msg_struct.get_error_msg(error_key));
         }
     }
 
@@ -152,12 +165,15 @@ pub fn validation_account_name(params: &web::Form<EditAccountNameParams>,acct_na
 pub fn validation_password(params: &web::Form<EditPasswordParams>,acct_name: &String,
     conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<String>{
     let mut error_msg:Vec<String> = Vec::new();
+    let error_msg_struct = ErrorMsg{};
+    let mut error_key: String;
     
     //必須項目チェック
     let current_password = params.current_password.clone();
     let edit_password = params.edit_password.clone();
     if current_password == String::from("") || edit_password == String::from("") {
-        error_msg.push(String::from("パスワードが未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("パスワード")));
         return error_msg;
     }
 
@@ -165,12 +181,14 @@ pub fn validation_password(params: &web::Form<EditPasswordParams>,acct_name: &St
     let temp_list = select_account_byname(&acct_name,conn);
     let temp_pwd = &temp_list[0].password;
     if !bcrypt::verify(current_password,temp_pwd){
-        error_msg.push(String::from("現在のパスワードが違います。"));
+        error_key = String::from("EM_ACCT_0005");
+        error_msg.push(error_msg_struct.get_error_msg(error_key));
     }
 
     //変更後パスワードの文字数チェック
     if edit_password.chars().count() < 8{
-        error_msg.push(String::from("変更後のパスワードの文字数を8文字以上にしてください。"));
+        error_key = String::from("EM_ACCT_0006");
+        error_msg.push(error_msg_struct.get_error_msg(error_key));
     }
 
     return error_msg;

@@ -6,6 +6,7 @@ use std::vec::Vec;
 use diesel::r2d2::{ConnectionManager};
 use r2d2::PooledConnection;
 use diesel::SqliteConnection;
+use crate::error_msg::{ErrorMsg,GetErrorMsg};
 
 //Threadのリストを全取得
 pub fn select_all_thred(conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<Thread>{
@@ -50,7 +51,9 @@ pub fn remove_thread(thd_id: i32,thd_name: String,conn: &PooledConnection<Connec
         diesel::delete(thread.filter(thread_id.eq(thd_id))).execute(conn).expect("Delete Error Thread");
         return String::from("");
     } else {
-        return String::from("スレッドが更新されております。ご確認下さい。");
+        let error_msg_struct = ErrorMsg{};
+        let error_key = String::from("EM_THD_0001");
+        return error_msg_struct.get_error_msg(error_key);
     }
 }
 
@@ -60,7 +63,10 @@ pub fn validation_thread(params: &web::Form<AddTreadParams>) -> Vec<String>{
 
     //必須項目チェック
     if params.thd_name.clone() == String::from(""){
-        error_msg.push(String::from("スレッド名が未入力です。"));
+        let error_msg_struct = ErrorMsg{};
+        let error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("スレッドネーム")));
+
     }
 
     return error_msg;

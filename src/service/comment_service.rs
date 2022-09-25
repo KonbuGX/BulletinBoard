@@ -6,6 +6,7 @@ use std::vec::Vec;
 use diesel::r2d2::{ConnectionManager};
 use r2d2::PooledConnection;
 use diesel::SqliteConnection;
+use crate::error_msg::{ErrorMsg,GetErrorMsg};
 
 //ThreadCommentのリストをid指定で取得
 pub fn select_all_comment(conn: &PooledConnection<ConnectionManager<SqliteConnection>>) -> Vec<ThreadComment>{
@@ -48,13 +49,17 @@ pub fn remove_comment(thd_id: i32,conn: &PooledConnection<ConnectionManager<Sqli
 //チェック処理
 pub fn validation_comment(params: &web::Form<AddCommentParams>) -> Vec<String>{
     let mut error_msg:Vec<String> = Vec::new();
+    let error_msg_struct = ErrorMsg{};
+    let mut error_key: String;
 
     //必須項目チェック
     if params.cmt_name.clone() == String::from(""){
-        error_msg.push(String::from("ネームが未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("ネーム")));
     }
     if params.cmt.clone() == String::from(""){
-        error_msg.push(String::from("コメントが未入力です。"));
+        error_key = String::from("EM_0001");
+        error_msg.push(error_msg_struct.get_error_msg_by_place_holder(error_key,String::from("コメント")));
     }
 
     return error_msg;

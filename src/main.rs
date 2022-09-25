@@ -12,6 +12,7 @@ use once_cell::sync::OnceCell;
 mod models;
 mod service;
 mod schema;
+mod error_msg;
 mod error;
 mod session_management;
 mod screen_status;
