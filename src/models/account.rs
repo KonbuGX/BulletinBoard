@@ -15,28 +15,28 @@ pub struct Account{
 //スレッドのインサート用構造体
 #[derive(Debug,Insertable)]
 #[table_name = "account"]
-pub struct NewAccount<'a>{
+pub struct NewAccount{
     pub account_no: i32,
-    pub account_name: &'a String,
+    pub account_name: String,
     pub password: String,
 }
 
 //アカウントのパラメータ取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct AddAccountParams{
+pub struct AccountAddParams{
     pub acct_name: String,
     pub pwd: String,
 }
 
 //編集後アカウントネーム取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct EditAccountNameParams{
+pub struct AccountNameEditParams{
     pub edit_acct_name: String,
 }
 
 //パスワード取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct EditPasswordParams{
+pub struct PasswordEditParams{
     pub current_password: String,
     pub edit_password: String,
 }

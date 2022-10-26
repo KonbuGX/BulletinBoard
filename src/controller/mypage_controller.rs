@@ -6,26 +6,13 @@ use pwhash::bcrypt;
 use std::collections::HashMap;
 
 use crate::MyError;
-use crate::models::Thread;
-use crate::models::EditAccountNameParams;
-use crate::models::EditPasswordParams;
-use crate::models::DeleteTreadParams;
-use crate::models::AddTreadSearchParams;
-use crate::service::select_all_thred;
-use crate::service::select_thred_name;
+use crate::models::{Thread,ThreadDeleteParams,ThreadSearchParams,AccountNameEditParams,PasswordEditParams};
 use crate::service::get_login_status;
 use crate::service::get_acct_name;
 use crate::service::get_acct_no;
-use crate::service::update_account_info;
-use crate::service::update_password;
-use crate::service::validation_account_name;
-use crate::service::validation_password;
 use crate::session_management::set_session;
 use crate::session_management::get_session;
 use crate::session_management::delete_session;
-
-use crate::service::remove_thread;
-use crate::service::remove_comment;
 
 use crate::ACCTNO;
 use crate::ACCTNAME;
@@ -113,7 +100,7 @@ pub async fn account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisCo
 
 //アカウントネーム変更画面で変更ボタン押下
 #[post("/account")]
-pub async fn edit_account(params: web::Form<EditAccountNameParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+pub async fn edit_account(params: web::Form<AccountNameEditParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
     let mut redis_conn = redis.get()?;
 
@@ -121,8 +108,11 @@ pub async fn edit_account(params: web::Form<EditAccountNameParams>,redis: web::D
     let mut acct_info = get_session(&mut redis_conn, &SESSION_ID);
     let acct_no = get_acct_no(acct_info.get(ACCTNO.get().unwrap()));
     let mut acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
-
-    let error_msg = validation_account_name(&params,&acct_name,&conn);
+    
+    //アカウントネームのチャック処理
+    let edit_acct_name = params.edit_acct_name.clone();
+    let acct_name_edit_params = AccountNameEditParams::new(edit_acct_name);
+    let error_msg = acct_name_edit_params.validation_account_name(&acct_name,&conn);
     if error_msg.len() > 0{
         //ログインの状態を取得
         let login_status = get_login_status(&acct_info);
@@ -135,15 +125,14 @@ pub async fn edit_account(params: web::Form<EditAccountNameParams>,redis: web::D
         .body(response_body))
     }else{
         //アカウントネームを更新
-        let edit_acct_name = params.edit_acct_name.clone();
-        update_account_info(&acct_no, &edit_acct_name, &conn);
+        acct_name_edit_params.update_account_info(&acct_no, &conn);
 
         //新しいアカウントネームをセットする。
         let account_info_key = vec![ACCTNAME.get().unwrap()];
         delete_session(&mut redis_conn,&SESSION_ID, account_info_key);
 
         let mut new_account_info: HashMap<&String,String> = HashMap::new();
-        new_account_info.insert(ACCTNAME.get().unwrap(), edit_acct_name);
+        new_account_info.insert(ACCTNAME.get().unwrap(), acct_name_edit_params.edit_acct_name);
         set_session(&mut redis_conn,&SESSION_ID, new_account_info);
 
         //ログインの状態を取得
@@ -183,7 +172,7 @@ pub async fn password(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisC
 
 //パスワード変更画面の変更ボタン押下時
 #[post("/password")]
-pub async fn edit_password(params: web::Form<EditPasswordParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+pub async fn edit_password(params: web::Form<PasswordEditParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
     let mut redis_conn = redis.get()?;
 
@@ -192,7 +181,11 @@ pub async fn edit_password(params: web::Form<EditPasswordParams>,redis: web::Dat
     let acct_no = get_acct_no(acct_info.get(ACCTNO.get().unwrap()));
     let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
 
-    let error_msg = validation_password(&params,&acct_name,&conn);
+    //パスワードのチェック処理
+    let current_password = params.current_password.clone();
+    let edit_password = params.edit_password.clone();
+    let mut pwd_edit_params = PasswordEditParams::new(current_password,edit_password);
+    let error_msg = pwd_edit_params.validation_password(&acct_name,&conn);
     if error_msg.len() > 0{
         //ログインの状態を取得
         let login_status = get_login_status(&acct_info);
@@ -205,8 +198,8 @@ pub async fn edit_password(params: web::Form<EditPasswordParams>,redis: web::Dat
         .body(response_body))
     }else{
         //パスワードを変更
-        let edit_password = bcrypt::hash(params.edit_password.clone()).unwrap();
-        update_password(&acct_no, edit_password, &conn);
+        pwd_edit_params.edit_password = bcrypt::hash(pwd_edit_params.edit_password).unwrap();
+        pwd_edit_params.update_password(&acct_no, &conn);
 
         //ログインの状態を取得
         let login_status = get_login_status(&acct_info);
@@ -230,7 +223,7 @@ pub async fn delete_thread_list(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_red
 
     //スレッドリストの取得
     let conn = db.get()?;
-    let thread_list = select_all_thred(&conn);
+    let thread_list = Thread::select_all_thred(&conn);
 
     //アカウントNo、アカウント名の取得
     let acct_no = get_acct_no(acct_info.get(ACCTNO.get().unwrap()));
@@ -250,7 +243,7 @@ pub async fn delete_thread_list(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_red
 
 //削除ボタン押下時
 #[post("/deleteThread")]
-pub async fn delete_thread(params: web::Form<DeleteTreadParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+pub async fn delete_thread(params: web::Form<ThreadDeleteParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
 
     //ログインの状態を取得
@@ -263,10 +256,13 @@ pub async fn delete_thread(params: web::Form<DeleteTreadParams>,redis: web::Data
     let acct_name = get_acct_name(acct_info.get(ACCTNAME.get().unwrap()));
 
     //スレッドとそれに付随するコメントを削除
-    let remove_status = remove_thread(params.thd_id.clone(),params.thd_name.clone(),&conn);
+    let thd_id = params.thd_id.clone();
+    let thd_name = params.thd_name.clone();
+    let thd_delete_params = ThreadDeleteParams::new(thd_id,thd_name);
+    let remove_status = thd_delete_params.remove_thread(&conn);
     if remove_status != String::from(""){
         //スレッドリストの取得
-        let thread_list = select_all_thred(&conn);
+        let thread_list = Thread::select_all_thred(&conn);
         
         //検索エリアの検索文字,インフォメッセージ、エラーメッセージの初期化
         let search_keyword = String::from("");
@@ -281,10 +277,10 @@ pub async fn delete_thread(params: web::Form<DeleteTreadParams>,redis: web::Data
         .body(response_body))
     }else{
         //スレッドコメントの削除
-        remove_comment(params.thd_id.clone(),&conn);
+        thd_delete_params.remove_comment(&conn);
 
         //スレッドリストの取得
-        let thread_list = select_all_thred(&conn);
+        let thread_list = Thread::select_all_thred(&conn);
 
         //検索エリアの検索文字,インフォメッセージ、エラーメッセージの初期化
         let search_keyword = String::from("");
@@ -301,12 +297,12 @@ pub async fn delete_thread(params: web::Form<DeleteTreadParams>,redis: web::Data
 
 //検索ボタン押下時
 #[post("/searchThread_mypage")]
-pub async fn search_thread_mypage(params: web::Form<AddTreadSearchParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
+pub async fn search_thread_mypage(params: web::Form<ThreadSearchParams>,redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisConnectionManager>>,db: web::Data<r2d2::Pool<ConnectionManager<SqliteConnection>>>) -> Result<HttpResponse,MyError>{
     let conn = db.get()?;
 
     //検索したスレッドリストの取得
-    let search_keyword = params.search_keyword.clone();
-    let thread_list = select_thred_name(&search_keyword,&conn);
+    let thd_search_params = ThreadSearchParams::new(params.search_keyword.clone());
+    let thread_list = thd_search_params.select_thred_name(&conn);
 
     //ログインの状態を取得
     let mut redis_conn = redis.get()?;
@@ -321,6 +317,7 @@ pub async fn search_thread_mypage(params: web::Form<AddTreadSearchParams>,redis:
     let info_msg = String::from("");
     let error_msg = Vec::new();
 
+    let search_keyword = thd_search_params.search_keyword;
     let html = DeleteThreadTemplate {acct_no,acct_name,login_status,search_keyword,info_msg,thread_list,error_msg};
     let response_body = html.render()?;
     Ok(HttpResponse::Ok()

@@ -25,7 +25,7 @@ pub struct NewThreadComment{
 
 //コメントのパラメータ取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct AddCommentParams{
+pub struct CommentCreateParams{
     pub thd_id: i32,
     pub cmt_name: String,
     pub cmt: String,
@@ -34,7 +34,7 @@ pub struct AddCommentParams{
 
 //スレッドのid,スレッド名取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct GetThreadParams{
+pub struct ThreadGetParams{
     pub thd_id: i32,
     pub thd_name: String,
 }

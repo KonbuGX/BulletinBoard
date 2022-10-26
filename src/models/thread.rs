@@ -21,19 +21,19 @@ pub struct NewThread{
 
 //検索キーワード取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct AddTreadSearchParams{
+pub struct ThreadSearchParams{
     pub search_keyword: String,
 }
 
 //スレッドネーム取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct AddTreadParams{
+pub struct ThreadCreateParams{
     pub thd_name: String,
 }
 
 //スレッドの削除パラメータ取得用構造体
 #[derive(Deserialize,Clone)]
-pub struct DeleteTreadParams{
+pub struct ThreadDeleteParams{
     pub thd_id: i32,
     pub thd_name: String,
 }
