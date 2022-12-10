@@ -69,7 +69,7 @@ pub async fn signout(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::RedisCo
     let account_info = vec![ACCTNO.get().unwrap(),ACCTNAME.get().unwrap()];
     delete_session(&mut redis_conn,&SESSION_ID, account_info);
     //「""」をセットしてセッションIDがない状態を表す
-    &SESSION_ID.set(String::from(""));
+    let _ = &SESSION_ID.set(String::from(""));
 
     Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
@@ -90,7 +90,7 @@ pub async fn delete_account(redis: web::Data<r2d2_redis::r2d2::Pool<r2d2_redis::
     delete_session(&mut redis_conn,&SESSION_ID, account_info_keys);
 
     //「""」をセットしてセッションIDがない状態を表す
-    &SESSION_ID.set(String::from(""));
+    let _ = &SESSION_ID.set(String::from(""));
     Ok(HttpResponse::SeeOther().append_header((header::LOCATION,"/")).finish())
 }
 
