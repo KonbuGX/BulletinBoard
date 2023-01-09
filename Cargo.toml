@@ -25,3 +25,4 @@ strum_macros = "0.24"
 once_cell = "1.12.0"
 uuid = {version = "1.1.2",features = ["v4"]}
 phf = { version = "0.11", features = ["macros"] }
+regex = "1.7"

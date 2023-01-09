@@ -10,6 +10,8 @@ use crate::screen_status::ScreenStatus;
 use std::collections::HashMap;
 use crate::error_msg::{ErrorMsg,GetErrorMsg};
 use crate::ACCTNO;
+use regex::Regex;
+use crate::REGEX_ALPHANUMERIC;
 
 impl Account{
     //Accountのリストを全取得
@@ -82,9 +84,15 @@ impl AccountAddParams{
             }
 
             //パスワードの文字数チェック
-            //let pwd = params.pwd.clone();
             if pwd.chars().count() < 8{
                 error_key = String::from("EM_ACCT_0002");
+                error_msg.push(error_msg_struct.get_error_msg(error_key));
+            }
+
+            //パスワードのフォーマットチェック
+            let regex_format = Regex::new(REGEX_ALPHANUMERIC).unwrap();
+            if !regex_format.is_match(&pwd) {
+                error_key = String::from("EM_ACCT_0007");
                 error_msg.push(error_msg_struct.get_error_msg(error_key));
             }
 
@@ -197,6 +205,13 @@ impl PasswordEditParams{
         //変更後パスワードの文字数チェック
         if edit_password.chars().count() < 8{
             error_key = String::from("EM_ACCT_0006");
+            error_msg.push(error_msg_struct.get_error_msg(error_key));
+        }
+
+        //変更後パスワードのフォーマットチェック
+        let regex_format = Regex::new(REGEX_ALPHANUMERIC).unwrap();
+        if !regex_format.is_match(&edit_password) {
+            error_key = String::from("EM_ACCT_0007");
             error_msg.push(error_msg_struct.get_error_msg(error_key));
         }
 

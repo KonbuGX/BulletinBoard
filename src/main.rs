@@ -24,6 +24,7 @@ use routes::routes;
 pub static ACCTNO: OnceCell<String> = OnceCell::new();
 pub static ACCTNAME: OnceCell<String> = OnceCell::new();
 pub static SESSION_ID: OnceCell<String> = OnceCell::new();
+pub const REGEX_ALPHANUMERIC: &str = "^[[:alnum:]]+$";
 
 
 #[actix_rt::main]
